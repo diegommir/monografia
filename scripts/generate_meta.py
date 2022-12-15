@@ -1,12 +1,15 @@
+import os
 import pandas
 
-df = pandas.read_csv('metadata.csv')
+cwd = os.getcwd()
+
+df = pandas.read_csv(os.path.join(cwd, 'csv/metadata.csv'))
 df = df[['Subject ID', 'Series Description', 'Number of Images', 'File Location']]
 
-df_calc_train = pandas.read_csv('calc_case_description_train_set.csv')
-df_calc_test = pandas.read_csv('calc_case_description_test_set.csv')
-df_mass_train = pandas.read_csv('mass_case_description_train_set.csv')
-df_mass_test = pandas.read_csv('mass_case_description_test_set.csv')
+df_calc_train = pandas.read_csv(os.path.join(cwd, 'csv/calc_case_description_train_set.csv'))
+df_calc_test = pandas.read_csv(os.path.join(cwd, 'csv/calc_case_description_test_set.csv'))
+df_mass_train = pandas.read_csv(os.path.join(cwd, 'csv/mass_case_description_train_set.csv'))
+df_mass_test = pandas.read_csv(os.path.join(cwd, 'csv/mass_case_description_test_set.csv'))
 
 df['id'] = df['Subject ID'].apply(lambda id: 'P_' + id.split('_')[2])
 df['seq'] = df['Subject ID'].apply(lambda id: int(id.split('_')[5]) if len(id.split('_')) > 5 else 0)
@@ -48,4 +51,4 @@ def get_pathology(row):
 
 df['pathology'] = df.apply(get_pathology, axis=1)
 
-df.to_csv('new_meta.csv', index=False)
+df.to_csv(os.path.join(cwd, 'csv/new_meta.csv'), index=False)
