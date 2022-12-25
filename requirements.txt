@@ -1,0 +1,4 @@
+pandas
+pydicom
+torch
+torchvision
