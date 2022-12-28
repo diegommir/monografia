@@ -41,7 +41,7 @@ def generate_meta_db(path, metadb_name):
         ]['pathology'].iloc[0]
 
         #Append data to de new database metadata
-        metadb.append([id, seq, typez, side, view, len(img_array), len(img_array[0]), pathology, str(file)])
+        metadb.append([id, seq, typez, side, view, len(img_array[0]), len(img_array), pathology, str(file)])
 
     #Generate a pandas dataframe
     column_names = ['id', 'seq', 'type', 'side', 'view', 'width', 'height', 'pathology', 'file_name']
