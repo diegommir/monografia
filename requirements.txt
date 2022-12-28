@@ -1,4 +1,5 @@
 pandas
 pydicom
+matplotlib
 torch
 torchvision
