@@ -2,18 +2,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, RandomSampler
+import torchvision.transforms as T
 import os
 import numpy as np
 import pandas as pd
 import pydicom
+import matplotlib.pyplot as plt
 
 # Definition of the Convolutional Neural Network
-class CNN(nn.Module):
+class CustomCNN(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv1 = nn.Conv2d(1, 6, 5, bias=False)
         self.pool1 = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.conv2 = nn.Conv2d(6, 6, 5)
         self.pool2 = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 128)
@@ -62,14 +64,24 @@ class CustomDS(Dataset):
         img_path = os.path.join(self.db_path, row[-1])
         image = pydicom.dcmread(img_path).pixel_array
         image = image.astype(np.int32)
+        image = torch.from_numpy(image)
+        # TODO: add a dimension to the image here
+        print(image.shape)
+        print(image)
 
-        result = {
-            'image': image,
-            # Result: [ Pc Px Py Pw Ph M/B M/C ]
-            # Cols: [ Pc, center width, center height, width, height, pathology, type ]
-            'y': [1, row[5] / 2, row[6] / 2, row[5], row[6], row[2], row[7]]
-        }
-        return result
+        # Resize image
+        width = row[5]
+        height = row[6]
+        pad_width = img_cap[0] - width
+        pad_height = img_cap[1] - height
+        image = T.Pad((0, 0, pad_width, pad_height))(image)
+
+        # Target: [ Pc Px Py Pw Ph M/B M/C ]
+        # Cols: [ Pc, center width, center height, width, height, pathology, type ]
+        target = [1, int(row[5] / 2), int(row[6] / 2), row[5], row[6], row[7], row[2]]
+        target = torch.tensor(target)
+
+        return image, target
 
 # Loading metadata
 cwd = os.getcwd()
@@ -99,9 +111,9 @@ df = df[
 print('Total filtered:', df['id'].count())
 
 # Hyperparameters
-LR = 1e-3 #Learning rate
-BATCH_SIZE = 64
-EPOCHS = 10
+LR = 0.001 #Learning rate
+BATCH_SIZE = 2
+EPOCHS = 1
 
 # Train/Validation splits
 train_split = 0.75
@@ -115,12 +127,68 @@ device = torch.device('mps')
 db_path = '/Volumes/Seagate/monografia/database/roi/train/'
 ds = CustomDS(df, db_path)
 
-temp = ds.__getitem__(10)
-print(temp['y'])
-'''
-dataLoader = DataLoader(ds, batch_size=BATCH_SIZE, sampler=RandomSampler(ds))
+# Instantiate the custom CNN model
+model = CustomCNN()
+model.to(device)
 
-for i, sample in enumerate(dataLoader):
-    print(i, sample['image'][0])
-    break
+# Loss function and Optmizer initialization
+loss_func = nn.CrossEntropyLoss()
+opt = torch.optim.Adam(params=model.parameters(), lr=LR)
+
+# Creating data loaders 
+train_data = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True)
+valid_data = []
+test_data = []
+
+# Print some images for validation of data
+for i, (img, target) in enumerate(train_data):
+    print('{} x {}'.format(len(img[0][0]), len(img[0])))
+    print(img.size())
+    im = plt.imshow(img.permute(1, 2, 0), cmap='gray')
+    plt.show()
+    if i == 0:
+        break
+'''
+
+## Training model
+# Iterate over defined Epochs
+for epoch in range(0, EPOCHS):
+    model.train()
+
+    # Iterate over training dataset
+    for (images, targets) in train_data:
+        # Send tensors to the device
+        images = images.to(device)
+        targets = targets.to(device)
+
+        # Forward propagation
+        predicts = model(images)
+        loss = loss_func(predicts, targets)
+
+        # Backward propagation and optimization
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+
+    print('Epoch: {} | Loss: {:.3f}'.format(epoch + 1, loss.item()))
+
+## Testing model
+with torch.no_grad():
+    model.eval()
+
+    correct = 0
+    total = 0
+    for (images, targets) in test_data:
+        # Send tensors to the device
+        images = images.to(device)
+        targets = targets.to(device)
+
+        result = model(images)
+        _, predicts = torch.max(predicts, 1)
+
+        total = targets.size(0)
+        correct += (predicts == targets).sum().item()
+
+    print('Accuracy: {}%'.format(correct / total * 100))
+
 '''
