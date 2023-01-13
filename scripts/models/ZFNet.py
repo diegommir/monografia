@@ -34,12 +34,12 @@ class ZFNet(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(6400, 4096),
+            nn.Linear(9216, 4096),
             nn.ReLU(),
             nn.Linear(4096, 256),
             nn.ReLU(),
-            nn.Linear(256, 2),
-            nn.Sigmoid()
+            nn.Linear(256, 3),
+            nn.Softmax(dim=1)
         )
 
         # Result: [ Pc Px Py Pw Ph M/B M/C ]

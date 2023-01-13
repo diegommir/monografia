@@ -28,8 +28,8 @@ class LeNet(nn.Module):
             nn.ReLU(),
             nn.Linear(120, 84),
             nn.ReLU(),
-            nn.Linear(84, 2),
-            nn.Sigmoid()
+            nn.Linear(84, 3),
+            nn.Softmax(dim=1)
         )
 
         # Result: [ Pc Px Py Pw Ph M/B M/C ]

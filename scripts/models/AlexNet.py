@@ -38,8 +38,8 @@ class AlexNet(nn.Module):
             nn.ReLU(),
             nn.Linear(4096, 4096),
             nn.ReLU(),
-            nn.Linear(4096, 2),
-            nn.Sigmoid()
+            nn.Linear(4096, 3),
+            nn.Softmax(dim=1)
         )
 
     def forward(self, x):

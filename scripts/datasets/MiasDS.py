@@ -1,9 +1,7 @@
 import os
 import torch
 from torch.utils.data import Dataset
-import pydicom
 from PIL import Image
-import numpy as np
 import torchvision.transforms as T
 
 class MiasDS(Dataset):
@@ -32,7 +30,7 @@ class MiasDS(Dataset):
         # Convert it to 0-1 float scale tensor
         image = T.ToTensor()(image)
 
-        target = [row['class'], row['severity']]
+        target = [row['sev_N'], row['sev_M'], row['sev_B']]
         # Has to be float32 to work on MPS device
         target = torch.tensor(target, dtype=torch.float32)
 
