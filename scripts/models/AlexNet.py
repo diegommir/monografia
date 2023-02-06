@@ -7,7 +7,7 @@ class AlexNet(nn.Module):
         AlexNet network.
     '''
 
-    def __init__(self) -> None:
+    def __init__(self, flatten_value) -> None:
         super().__init__()
 
         self.layer1 = nn.Sequential(
@@ -34,11 +34,9 @@ class AlexNet(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(9216, 4096),
+            nn.Linear(flatten_value, 512),
             nn.ReLU(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(),
-            nn.Linear(4096, 3),
+            nn.Linear(512, 2),
             nn.Softmax(dim=1)
         )
 

@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as T
 
-class MiasDS(Dataset):
+class ValidDS(Dataset):
     '''
         Definition of a custom Torch Dataset based on the metadata.
     '''
@@ -30,8 +30,7 @@ class MiasDS(Dataset):
         # Convert it to 0-1 float scale tensor
         image = T.ToTensor()(image)
 
-        #target = [row['sev_N'], row['sev_B'] or row['sev_M']]
-        target = [row['sev_B'], row['sev_M']]
+        target = [row['class_C'], row['class_M']]
         # Has to be float32 to work on MPS device
         target = torch.tensor(target, dtype=torch.float32)
 

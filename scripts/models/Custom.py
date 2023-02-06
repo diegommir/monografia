@@ -1,6 +1,7 @@
+import torch
 from torch import nn
 
-class LeNet(nn.Module):
+class Custom(nn.Module):
     '''
         Definition of a simple Convolutional Neural Network based on 
         LeNet network.
@@ -10,27 +11,29 @@ class LeNet(nn.Module):
         super().__init__()
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 6, 3),
+            nn.Conv2d(1, 32, 3),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, 3),
             nn.ReLU(),
             nn.MaxPool2d(2)
         )
 
         self.layer2 = nn.Sequential(
-            nn.Conv2d(6, 16, 3),
+            nn.Conv2d(64, 64, 3),
             nn.ReLU(),
-            nn.MaxPool2d(2)
+            nn.MaxPool2d(2),
+            nn.Dropout(0.25),
         )
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(flatten_value, 120),
+            nn.Linear(flatten_value, 64),
             nn.ReLU(),
-            nn.Linear(120, 84),
-            nn.ReLU(),
-            nn.Linear(84, 2),
-            nn.Sigmoid()
+            nn.Dropout(0.25),
+            nn.Linear(64, 2),
+            nn.Softmax(dim=1)
         )
-
+    
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)

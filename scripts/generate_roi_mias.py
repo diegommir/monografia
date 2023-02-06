@@ -1,21 +1,41 @@
 import os
 import pandas as pd
+from random import randrange
 from PIL import Image, ImageOps
 
 class NewCsv:
     data = []
     i = 0
 
-def save_img(img, file_name, i, severity, db):
+def save_img(img, file_name, i, severity, db, clazz):
     new_ref = '{}_{:02d}'.format(file_name, i)
     img.save(os.path.join(roi_dir, '{}.bmp'.format(new_ref)))
-    NewCsv.data.append([new_ref, severity, db])
+    NewCsv.data.append([new_ref, severity, db, clazz])
+
+def get_class(clazz):
+    if clazz == 'CALC':
+        return 'C'
+    elif clazz == 'CIRC' or clazz == 'SPIC' or clazz == 'MISC':
+        return 'M'
+    elif clazz == 'ASYM' or clazz == 'ARCH':
+        return 'O'
+    else:
+        return 'N'
 
 def generate_roi(row):
-        image_size = 256
-        x = row['x']
-        y = row['y']
+        crop_size = 256
+
         db = row['db']
+        clazz = get_class(row['class'])
+        x = 488
+        y = 520
+        #x = randrange(crop_size, img.width - crop_size)
+        #y = randrange(crop_size, img.height - crop_size)
+        r = int(crop_size / 2)
+        if row['class'] != 'NORM':
+            x = int(row['x'])
+            y = int(row['y'])
+            r = int(row['radius'])
 
         # Set severity
         severity = 'N'
@@ -23,11 +43,6 @@ def generate_roi(row):
             severity = 'M'
         elif row['severity'] == 'B':
             severity = 'B'
-
-        # Using mean values when is a normal image
-        if row['class'] == 'NORM':
-            x = 488
-            y = 520
 
         # Open image file
         file_name = row['ref']
@@ -38,23 +53,24 @@ def generate_roi(row):
         print(new_file_name)
 
         # Define crop bounds
-        left = int(x) - int(image_size / 2)
-        top =  img.height - int(y) - int(image_size / 2)
-        right = int(x) + int(image_size / 2)
-        bottom = img.height - int(y) + int(image_size / 2)
+        left = x - r
+        top =  img.height - y - r
+        right = x + r
+        bottom = img.height - y + r
 
         # Crop ROI
         img = img.crop((left, top, right, bottom))
+        img = img.resize((crop_size, crop_size))
         i = 1
 
         # Augmentation
         for angle in (0, 90, 180, 270):
             # Rotate
             img_aug = img.rotate(angle)
-            save_img(img_aug, new_file_name, i, severity, db)
+            save_img(img_aug, new_file_name, i, severity, db, clazz)
             i += 1
             # Mirror
-            save_img(ImageOps.mirror(img_aug), new_file_name, i, severity, db)
+            save_img(ImageOps.mirror(img_aug), new_file_name, i, severity, db, clazz)
             i += 1
 
         NewCsv.i += 1
@@ -127,7 +143,7 @@ print(df[
 df.apply(generate_roi, axis=1)
 
 # Save the 
-column_names = ['ref', 'severity', 'db']
+column_names = ['ref', 'severity', 'db', 'class']
 df = pd.DataFrame(NewCsv.data, columns=column_names)
 df.to_csv(os.path.join(cwd, 'csv/new_mias.csv'), index=False)
 
